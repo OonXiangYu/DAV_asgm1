@@ -227,3 +227,46 @@ corrplot(cor_matrix,
          order = "hclust",
          tl.cex = 0.7,
          tl.col = "black")
+
+#Part 4
+data$total_guests <- data$adults + data$children + data$babies # Total guests
+data$total_nights <- data$stays_in_weekend_nights + data$stays_in_week_nights # Total nights
+
+# Segment
+# Family status
+data$family_status <- ifelse(
+  data$adults == 1 & data$children == 0 & data$babies == 0, "Solo",
+  ifelse(
+    data$adults == 2 & data$children == 0 & data$babies == 0, "Couple",
+    ifelse(
+      data$children > 0 | data$babies > 0, "Family",
+      "Group"
+    )
+  )
+)
+
+# Length of stay
+data$length_of_stay <- ifelse(
+  data$total_nights <= 2, "Short",
+  ifelse(
+    data$total_nights <= 7, "Medium",
+    "Long"
+  )
+)
+
+# Calculate cancellation rate for each segment
+seg_data <- data %>%
+  group_by(family_status, length_of_stay) %>%
+  summarise(cancel_rate = mean(is_canceled))
+
+# Faceted bar chart
+ggplot(seg_data, aes(x = family_status, y = cancel_rate, fill = family_status)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ length_of_stay) +
+  labs(
+    title = "Cancellation Rate by Customer Segments",
+    x = "Family Status",
+    y = "Cancellation Rate",
+    fill = "Family Status"
+  ) +
+  theme_minimal() + scale_y_continuous(labels = scales::percent)
